@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "707040754171",
+    "project_id": "una-app-onboarding",
+    "storage_bucket": "una-app-onboarding.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:707040754171:android:a5a1677b175c53c350b35e",
+        "android_client_info": {
+          "package_name": "com.app.una"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4MVfkCIuAk8sQ9lhkljtCnjbkkSRi1Ec"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:707040754171:android:5413579ac36bf5ee50b35e",
+        "android_client_info": {
+          "package_name": "com.app.una.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4MVfkCIuAk8sQ9lhkljtCnjbkkSRi1Ec"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
