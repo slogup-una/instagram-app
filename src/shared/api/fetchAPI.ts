@@ -13,6 +13,8 @@ const publicFetchAPI = async <T>(
     },
   });
 
+  console.log('APP_API_URL:', Config.APP_API_URL);
+
   try {
     const response = await publicApiClient.request<T>({
       url: endpoint,

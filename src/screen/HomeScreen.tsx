@@ -215,12 +215,16 @@ function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <FlatList
-        data={data.data ?? []}
-        keyExtractor={item => item.id.toString()}
-        renderItem={({ item }) => <FeedItem item={item} />}
-        showsVerticalScrollIndicator={false}
-      />
+      {data ? (
+        <FlatList
+          data={data?.data ?? []}
+          keyExtractor={item => item.id.toString()}
+          renderItem={({ item }) => <FeedItem item={item} />}
+          showsVerticalScrollIndicator={false}
+        />
+      ) : (
+        <Text>데이터가 없습니다.</Text>
+      )}
     </View>
   );
 }
