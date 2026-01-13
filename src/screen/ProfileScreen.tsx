@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Button, Text, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ThemeToggle from '../widgets/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
+import { supabase } from '../shared/api/supabase';
 
 function ProfileScreen() {
   const { theme } = useTheme();
@@ -44,6 +45,7 @@ function ProfileScreen() {
         다양한 동영상을 추가하여 사람들과 공유하세요!
       </Text>
       <ThemeToggle />
+      <Button title="Logout" onPress={() => supabase.auth.signOut()} />
     </View>
   );
 }
