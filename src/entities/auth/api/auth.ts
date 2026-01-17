@@ -1,18 +1,36 @@
+  // 현재 유저의 프로필 정보 수정
+  /* 사용예시
+  import { authAPI } from '../entities/auth';
+
+  // 닉네임만 수정
+  await authAPI.updateUserProfile({ 
+    nickname: '새로운닉네임' 
+  });
+
+  // 여러 필드 동시 수정
+  await authAPI.updateUserProfile({
+    nickname: '새로운닉네임',
+    description: '안녕하세요!',
+    profile_image_url: 'https://example.com/image.jpg'
+  });
+
+  // null로 설정 (필드 초기화)
+  await authAPI.updateUserProfile({
+    description: null
+  });
+  */
+
 import { supabase } from '../../../shared/api/supabase';
+import { UserProfile } from '../../user/api/userProfile';
 
 export interface SignUpParams {
   email: string;
   password: string;
 }
 
-
-
 export interface SignInParams {
-
   email: string;
-
   password: string;
-
 }
 
 export interface UpdateProfileParams {
@@ -21,23 +39,9 @@ export interface UpdateProfileParams {
   profile_image_url?: string | null;
 }
 
-export interface UserProfile {
-  user_id: string;
-  nickname: string | null;
-  description: string | null;
-  profile_image_url: string | null;
-  follower_count: number;
-  following_count: number;
-  post_count: number;
-  created_at: string;
-}
-
-
-
 export const authAPI = {
 
-  // 회원가입
-
+  // 회원가입시 랜덤프로필 자동생성
   signUp: async ({ email, password }: SignUpParams) => {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -132,27 +136,6 @@ export const authAPI = {
     return data;
   },
 
-  // 현재 유저의 프로필 정보 수정
-  /* 사용예시
-  import { authAPI } from '../entities/auth';
-
-  // 닉네임만 수정
-  await authAPI.updateUserProfile({ 
-    nickname: '새로운닉네임' 
-  });
-
-  // 여러 필드 동시 수정
-  await authAPI.updateUserProfile({
-    nickname: '새로운닉네임',
-    description: '안녕하세요!',
-    profile_image_url: 'https://example.com/image.jpg'
-  });
-
-  // null로 설정 (필드 초기화)
-  await authAPI.updateUserProfile({
-    description: null
-  });
-  */
   updateUserProfile: async (
     params: UpdateProfileParams
   ): Promise<UserProfile> => {

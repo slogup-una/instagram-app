@@ -29,6 +29,7 @@
 import { supabase } from '../../../shared/api/supabase';
 import { publicFetchAPI } from '../../../shared/api/fetchAPI';
 
+// 기존코드
 export const getFeeds = async () => {
   return publicFetchAPI<any>('/feeds', {
     method: 'GET',

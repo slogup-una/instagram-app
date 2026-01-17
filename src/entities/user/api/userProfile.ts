@@ -12,7 +12,17 @@
  */
 
 import { supabase } from '../../../shared/api/supabase';
-import { UserProfile } from '../../auth/api/auth';
+
+export interface UserProfile {
+  user_id: string;
+  nickname: string | null;
+  description: string | null;
+  profile_image_url: string | null;
+  follower_count: number;
+  following_count: number;
+  post_count: number;
+  created_at: string;
+}
 
 export const userProfileAPI = {
   /**
