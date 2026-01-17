@@ -29,9 +29,8 @@ export const SignUpScreen = ({ navigation }: any) => {
     try {
       setLoading(true);
       await authAPI.signUp({ email, password });
-      Alert.alert('성공', '회원가입이 완료되었습니다.', [
-        { text: '확인', onPress: () => navigation.navigate('SignIn') },
-      ]);
+      // 회원가입 성공 시 자동으로 로그인되므로 인증 상태 변경에 따라 자동으로 메인 화면으로 이동
+      Alert.alert('성공', '회원가입이 완료되었습니다.');
     } catch (error: any) {
       Alert.alert('회원가입 실패', error.message || '다시 시도해주세요.');
     } finally {
