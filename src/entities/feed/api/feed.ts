@@ -146,19 +146,7 @@ export const feedAPI = {
 
     if (error) throw error;
 
-    // user_profiles의 post_count 증가
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('post_count')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profile) {
-      await supabase
-        .from('user_profiles')
-        .update({ post_count: profile.post_count + 1 })
-        .eq('user_id', user.id);
-    }
+    // ✅ Trigger가 자동으로 post_count 증가 처리
 
     return data;
   },
@@ -225,19 +213,8 @@ export const feedAPI = {
 
     if (error) throw error;
 
-    // user_profiles의 post_count 감소
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('post_count')
-      .eq('user_id', user.id)
-      .single();
+    // ✅ Trigger가 자동으로 post_count 감소 처리 (CASCADE된 댓글/좋아요도 자동)
 
-    if (profile && profile.post_count > 0) {
-      await supabase
-        .from('user_profiles')
-        .update({ post_count: profile.post_count - 1 })
-        .eq('user_id', user.id);
-    }
   },
 
   /**
