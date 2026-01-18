@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   Alert,
@@ -10,7 +9,7 @@ import {
 } from 'react-native';
 import { authAPI } from '../entities/auth';
 import { useTheme } from '../context/ThemeContext';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Input } from '../shared/ui/Input';
 
 export const SignUpScreen = ({ navigation }: any) => {
   const { theme } = useTheme();
@@ -18,7 +17,6 @@ export const SignUpScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   const handleSignUp = async () => {
     if (!email || !password) {
@@ -53,61 +51,18 @@ export const SignUpScreen = ({ navigation }: any) => {
           회원님에게 연락할 수 있는 이메일 주소를 입력하세요. 이 이메일 주소는
           프로필에서 다른 사람에게 공개되지 않습니다.
         </Text>
-        <TextInput
-          style={{
-            ...styles.input,
-            color: theme.textPrimary,
-            borderColor: theme.placeholder,
-          }}
+        <Input
           placeholder="이메일 주소"
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
-          placeholderTextColor={theme.placeholder}
         />
-        <View style={{ position: 'relative' }}>
-          <TextInput
-            style={{
-              ...styles.input,
-              color: theme.textPrimary,
-              borderColor: theme.placeholder,
-            }}
-            placeholder="비밀번호 (최소 6자)"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-            placeholderTextColor={theme.placeholder}
-          />
-          <TouchableOpacity
-            style={{
-              position: 'absolute',
-              right: 16,
-              top: 14,
-              zIndex: 1,
-            }}
-          >
-            <Text style={{ fontSize: 18 }}>
-              {showPassword ? (
-                <MaterialCommunityIcons
-                  name="eye-off-outline"
-                  color={styles.input.borderColor}
-                  size={24}
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={{ marginBottom: 16 }}
-                />
-              ) : (
-                <MaterialCommunityIcons
-                  name="eye-outline"
-                  color={styles.input.borderColor}
-                  size={24}
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={{ marginBottom: 16 }}
-                />
-              )}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <Input.Password
+          placeholder="비밀번호"
+          value={password}
+          onChangeText={setPassword}
+        />
         <TouchableOpacity
           style={styles.button}
           onPress={handleSignUp}
@@ -141,15 +96,7 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 14,
-    marginBottom: 10,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 15,
-    marginBottom: 15,
-    borderRadius: 14,
-    fontSize: 16,
+    marginBottom: 24,
   },
   button: {
     backgroundColor: '#007AFF',

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   Alert,
@@ -10,10 +9,10 @@ import {
   Image,
 } from 'react-native';
 import { authAPI } from '../entities/auth';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
 import { colors } from '../shared/style/colors';
 import MetaLogo from '../shared/asset/meta.svg';
+import { Input } from '../shared/ui/Input';
 
 export const SignInScreen = ({ navigation }: any) => {
   const { theme } = useTheme();
@@ -21,7 +20,6 @@ export const SignInScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   const handleSignIn = async () => {
     if (!email || !password) {
@@ -63,62 +61,18 @@ export const SignInScreen = ({ navigation }: any) => {
       </View>
 
       <View style={{ flex: 1.5 }}>
-        <TextInput
-          style={{
-            ...styles.input,
-            color: theme.textPrimary,
-            borderColor: theme.placeholder,
-          }}
+        <Input
           placeholder="이메일 주소"
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
-          placeholderTextColor={theme.placeholder}
         />
-        <View style={{ position: 'relative' }}>
-          <TextInput
-            placeholder="비밀번호"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-            style={{
-              ...styles.input,
-              color: theme.textPrimary,
-              paddingRight: 45,
-              borderColor: theme.placeholder,
-            }}
-            placeholderTextColor={theme.placeholder}
-          />
-          <TouchableOpacity
-            style={{
-              position: 'absolute',
-              right: 16,
-              top: 14,
-              zIndex: 1,
-            }}
-          >
-            <Text style={{ fontSize: 18 }}>
-              {showPassword ? (
-                <MaterialCommunityIcons
-                  name="eye-off-outline"
-                  color={styles.input.borderColor}
-                  size={24}
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={{ marginBottom: 16 }}
-                />
-              ) : (
-                <MaterialCommunityIcons
-                  name="eye-outline"
-                  color={styles.input.borderColor}
-                  size={24}
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={{ marginBottom: 16 }}
-                />
-              )}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <Input.Password
+          placeholder="비밀번호"
+          value={password}
+          onChangeText={setPassword}
+        />
         <TouchableOpacity
           style={styles.button}
           onPress={handleSignIn}
@@ -184,14 +138,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 30,
     textAlign: 'center',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 15,
-    marginBottom: 15,
-    borderRadius: 14,
-    fontSize: 16,
   },
   button: {
     backgroundColor: colors.primary,
