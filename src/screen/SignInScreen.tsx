@@ -43,6 +43,10 @@ export const SignInScreen = ({ navigation }: any) => {
     }
   };
 
+  const handleGoToSignUp = () => {
+    navigation.navigate('SignUp');
+  };
+
   return (
     <View
       style={{
@@ -139,7 +143,7 @@ export const SignInScreen = ({ navigation }: any) => {
       <View>
         <TouchableOpacity
           style={{ ...styles.outlineButton, borderColor: theme.primary100 }}
-          onPress={() => navigation.navigate('SignUp')}
+          onPress={handleGoToSignUp}
         >
           <Text style={{ color: theme.primary100 }}>새 계정 만들기</Text>
         </TouchableOpacity>
@@ -152,7 +156,14 @@ export const SignInScreen = ({ navigation }: any) => {
           }}
         >
           <MetaLogo width={20} height={20} />
-          <Text style={{ marginLeft: 4, color: theme.gray, fontSize: 18 }}>
+          <Text
+            style={{
+              marginLeft: 4,
+              color: theme.gray,
+              fontSize: 18,
+              fontWeight: 600,
+            }}
+          >
             Meta
           </Text>
         </View>

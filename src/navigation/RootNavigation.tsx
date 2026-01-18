@@ -5,10 +5,12 @@ import { supabase } from '../shared/api/supabase';
 import TabNavigation from './TabNavigation';
 import { SignInScreen } from '../screen/SignInScreen';
 import { SignUpScreen } from '../screen/SignUpScreen';
+import { useTheme } from '../context/ThemeContext';
 
 const Stack = createNativeStackNavigator();
 
 const RootNavigation = () => {
+  const { theme } = useTheme();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -20,7 +22,9 @@ const RootNavigation = () => {
     });
 
     // 인증 상태 변경 리스너
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
     });
 
@@ -42,7 +46,19 @@ const RootNavigation = () => {
       ) : (
         <>
           <Stack.Screen name="SignIn" component={SignInScreen} />
-          <Stack.Screen name="SignUp" component={SignUpScreen} />
+          <Stack.Screen
+            name="SignUp"
+            component={SignUpScreen}
+            options={{
+              headerShown: true,
+              title: '',
+              headerTintColor: theme.textPrimary,
+              headerBackButtonDisplayMode: 'minimal',
+              headerStyle: {
+                backgroundColor: theme.background,
+              },
+            }}
+          />
         </>
       )}
     </Stack.Navigator>
