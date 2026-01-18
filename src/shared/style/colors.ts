@@ -4,6 +4,9 @@ export const colors = {
   textSecondary: '#6E6E73',
   divider: '#E5E5EA',
   primary: '#007AFF',
+  primary100: '#4599FE',
+  placeholder: '#8e8e8e',
+  gray: '#8e8e8e',
   pink: {
     100: '#FDECEF',
     200: '#F9C5D1',
@@ -31,12 +34,15 @@ export const colors = {
 };
 
 export const darkColors = {
-  background: '#0F0F10',
+  background: '#152127',
   surface: '#1A1A1D',
-  textPrimary: '#FAFAFA',
+  textPrimary: '#F1F4F7',
   textSecondary: '#B3B3B3',
+  placeholder: '#96A6B4',
   divider: '#2A2A2E',
   primary: '#007AFF',
+  primary100: '#4599FE',
+  gray: '#8e8e8e',
   pink: {
     100: '#3A1E25',
     200: '#5A2734',
