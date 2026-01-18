@@ -1,16 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { supabase } from '../shared/api/supabase';
 import TabNavigation from './TabNavigation';
 import { SignInScreen } from '../screen/SignInScreen';
 import { SignUpScreen } from '../screen/SignUpScreen';
 import { useTheme } from '../context/ThemeContext';
+import { useNavigation } from '@react-navigation/native';
 
 const Stack = createNativeStackNavigator();
 
 const RootNavigation = () => {
-  const { theme } = useTheme();
+  const navigation = useNavigation();
+  const { isDark, theme } = useTheme();
+
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -57,6 +66,21 @@ const RootNavigation = () => {
               headerStyle: {
                 backgroundColor: theme.background,
               },
+              headerLeft: () => (
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                  {isDark ? (
+                    <Image
+                      source={require('../shared/asset/ic-arrow-left-white.png')}
+                      style={{ width: 24, height: 24 }}
+                    />
+                  ) : (
+                    <Image
+                      source={require('../shared/asset/ic-arrow-left.png')}
+                      style={{ width: 24, height: 24 }}
+                    />
+                  )}
+                </TouchableOpacity>
+              ),
             }}
           />
         </>
