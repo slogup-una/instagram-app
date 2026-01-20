@@ -36,7 +36,15 @@ export const getFeeds = async () => {
   });
 };
 
-export interface Feed {
+/**
+ * NOTE
+ * - Supabase(DB) 응답은 snake_case (Row/DTO)
+ * - 앱 내부에서 사용할 모델은 camelCase (Model)
+ * - feedAPI가 그 경계(매핑) 역할을 한다.
+ */
+
+// ===== DB Row (snake_case) =====
+export interface FeedRow {
   id: number;
   user_id: string;
   images: string[];
@@ -45,6 +53,36 @@ export interface Feed {
   comments_count: number;
   shared_count: number;
   created_at: string;
+}
+
+export interface UserProfileRow {
+  nickname: string | null;
+  profile_image_url: string | null;
+}
+
+export interface FeedWithProfileRow extends FeedRow {
+  user_profiles: UserProfileRow;
+}
+
+// ===== App Model (camelCase) =====
+export interface Feed {
+  id: number;
+  userId: string;
+  images: string[];
+  caption: string;
+  likesCount: number;
+  commentsCount: number;
+  sharedCount: number;
+  createdAt: string;
+}
+
+export interface UserProfile {
+  nickname: string | null;
+  profileImageUrl: string | null;
+}
+
+export interface FeedWithProfile extends Feed {
+  userProfiles: UserProfile;
 }
 
 export interface CreateFeedParams {
@@ -61,12 +99,26 @@ export interface GetFeedsParams {
   offset?: number;
 }
 
-export interface FeedWithProfile extends Feed {
-  user_profiles: {
-    nickname: string | null;
-    profile_image_url: string | null;
-  };
-}
+const mapUserProfile = (row: UserProfileRow | null | undefined): UserProfile => ({
+  nickname: row?.nickname ?? null,
+  profileImageUrl: row?.profile_image_url ?? null,
+});
+
+const mapFeed = (row: FeedRow): Feed => ({
+  id: row.id,
+  userId: row.user_id,
+  images: row.images,
+  caption: row.caption,
+  likesCount: row.likes_count,
+  commentsCount: row.comments_count,
+  sharedCount: row.shared_count,
+  createdAt: row.created_at,
+});
+
+const mapFeedWithProfile = (row: FeedWithProfileRow): FeedWithProfile => ({
+  ...mapFeed(row),
+  userProfiles: mapUserProfile(row.user_profiles),
+});
 
 export const feedAPI = {
   /**
@@ -93,7 +145,7 @@ export const feedAPI = {
       .range(offset, offset + limit - 1);
 
     if (error) throw error;
-    return data || [];
+    return (data as FeedWithProfileRow[] | null | undefined)?.map(mapFeedWithProfile) ?? [];
   },
 
   /**
@@ -120,7 +172,8 @@ export const feedAPI = {
       if (error.code === 'PGRST116') return null;
       throw error;
     }
-    return data;
+    if (!data) return null;
+    return mapFeedWithProfile(data as FeedWithProfileRow);
   },
 
   /**
@@ -149,7 +202,7 @@ export const feedAPI = {
 
     // ✅ Trigger가 자동으로 post_count 증가 처리
 
-    return data;
+    return mapFeed(data as FeedRow);
   },
 
   /**
@@ -174,7 +227,7 @@ export const feedAPI = {
       .single();
 
     if (fetchError) throw fetchError;
-    if (existingFeed.user_id !== user.id) {
+    if ((existingFeed as { user_id: string }).user_id !== user.id) {
       throw new Error('Not authorized to update this feed');
     }
 
@@ -186,7 +239,7 @@ export const feedAPI = {
       .single();
 
     if (error) throw error;
-    return data;
+    return mapFeed(data as FeedRow);
   },
 
   /**
@@ -206,7 +259,7 @@ export const feedAPI = {
       .single();
 
     if (fetchError) throw fetchError;
-    if (existingFeed.user_id !== user.id) {
+    if ((existingFeed as { user_id: string }).user_id !== user.id) {
       throw new Error('Not authorized to delete this feed');
     }
 
@@ -238,6 +291,6 @@ export const feedAPI = {
       .range(offset, offset + limit - 1);
 
     if (error) throw error;
-    return data || [];
+    return (data as FeedRow[] | null | undefined)?.map(mapFeed) ?? [];
   },
 };

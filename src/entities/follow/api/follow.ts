@@ -25,13 +25,27 @@
 
 import { supabase } from '../../../shared/api/supabase';
 
-export interface Follow {
+/**
+ * NOTE
+ * - Supabase(DB) 응답은 snake_case (Row/DTO)
+ * - 앱 내부에서 사용할 모델은 camelCase (Model)
+ * - followAPI가 그 경계(매핑) 역할을 한다.
+ */
+
+// ===== DB Row (snake_case) =====
+export interface FollowRow {
   follower_id: string;
   following_id: string;
   created_at: string;
 }
 
-export interface FollowWithProfile extends Follow {
+export interface FollowProfileRow {
+  user_id: string;
+  nickname: string | null;
+  profile_image_url: string | null;
+}
+
+export interface FollowWithProfileRow extends FollowRow {
   follower_profile: {
     user_id: string;
     nickname: string | null;
@@ -44,15 +58,51 @@ export interface FollowWithProfile extends Follow {
   };
 }
 
+// ===== App Model (camelCase) =====
+export interface Follow {
+  followerId: string;
+  followingId: string;
+  createdAt: string;
+}
+
+export interface FollowProfile {
+  userId: string;
+  nickname: string | null;
+  profileImageUrl: string | null;
+}
+
+export interface FollowWithProfile extends Follow {
+  followerProfile: FollowProfile;
+  followingProfile: FollowProfile;
+}
+
 export interface GetFollowsParams {
   limit?: number;
   offset?: number;
 }
 
 export interface FollowCounts {
-  follower_count: number;
-  following_count: number;
+  followerCount: number;
+  followingCount: number;
 }
+
+const mapFollow = (row: FollowRow): Follow => ({
+  followerId: row.follower_id,
+  followingId: row.following_id,
+  createdAt: row.created_at,
+});
+
+const mapFollowProfile = (row: FollowProfileRow | null | undefined): FollowProfile => ({
+  userId: row?.user_id ?? '',
+  nickname: row?.nickname ?? null,
+  profileImageUrl: row?.profile_image_url ?? null,
+});
+
+const mapFollowWithProfile = (row: FollowWithProfileRow): FollowWithProfile => ({
+  ...mapFollow(row),
+  followerProfile: mapFollowProfile(row.follower_profile as any),
+  followingProfile: mapFollowProfile(row.following_profile as any),
+});
 
 export const followAPI = {
   /**
@@ -182,7 +232,7 @@ export const followAPI = {
       .range(offset, offset + limit - 1);
 
     if (error) throw error;
-    return data || [];
+    return (data as FollowWithProfileRow[] | null | undefined)?.map(mapFollowWithProfile) ?? [];
   },
 
   /**
@@ -216,7 +266,7 @@ export const followAPI = {
       .range(offset, offset + limit - 1);
 
     if (error) throw error;
-    return data || [];
+    return (data as FollowWithProfileRow[] | null | undefined)?.map(mapFollowWithProfile) ?? [];
   },
 
   /**
@@ -244,8 +294,8 @@ export const followAPI = {
     if (error) throw error;
 
     return {
-      follower_count: profile.follower_count,
-      following_count: profile.following_count,
+      followerCount: profile.follower_count,
+      followingCount: profile.following_count,
     };
   },
 };

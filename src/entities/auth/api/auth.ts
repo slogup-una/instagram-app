@@ -21,7 +21,7 @@
   */
 
 import { supabase } from '../../../shared/api/supabase';
-import { UserProfile } from '../../user/api/userProfile';
+import { UserProfile, UserProfileRow } from '../../user/api/userProfile';
 
 export interface SignUpParams {
   email: string;
@@ -36,7 +36,7 @@ export interface SignInParams {
 export interface UpdateProfileParams {
   nickname?: string | null;
   description?: string | null;
-  profile_image_url?: string | null;
+  profileImageUrl?: string | null;
 }
 
 export const authAPI = {
@@ -118,7 +118,18 @@ export const authAPI = {
       .single();
 
     if (error) throw error;
-    return data;
+    if (!data) return null;
+    const row = data as UserProfileRow;
+    return {
+      userId: row.user_id,
+      nickname: row.nickname,
+      description: row.description,
+      profileImageUrl: row.profile_image_url,
+      followerCount: row.follower_count,
+      followingCount: row.following_count,
+      postCount: row.post_count,
+      createdAt: row.created_at,
+    };
   },
 
   // 특정 유저 ID로 프로필 정보 가져오기
@@ -133,7 +144,18 @@ export const authAPI = {
       if (error.code === 'PGRST116') return null; // 데이터 없음
       throw error;
     }
-    return data;
+    if (!data) return null;
+    const row = data as UserProfileRow;
+    return {
+      userId: row.user_id,
+      nickname: row.nickname,
+      description: row.description,
+      profileImageUrl: row.profile_image_url,
+      followerCount: row.follower_count,
+      followingCount: row.following_count,
+      postCount: row.post_count,
+      createdAt: row.created_at,
+    };
   },
 
   updateUserProfile: async (
@@ -144,12 +166,13 @@ export const authAPI = {
     if (!user) throw new Error('User not authenticated');
 
     // 수정할 데이터만 필터링 (undefined 제외)
-    const updateData: Partial<UpdateProfileParams> = {};
+    // DB 컬럼명(snake_case)으로 업데이트해야 해서 여기서만 매핑
+    const updateData: Record<string, any> = {};
     if (params.nickname !== undefined) updateData.nickname = params.nickname;
     if (params.description !== undefined)
       updateData.description = params.description;
-    if (params.profile_image_url !== undefined)
-      updateData.profile_image_url = params.profile_image_url;
+    if (params.profileImageUrl !== undefined)
+      updateData.profile_image_url = params.profileImageUrl;
 
     // 수정할 데이터가 없으면 에러
     if (Object.keys(updateData).length === 0) {
@@ -166,7 +189,17 @@ export const authAPI = {
     if (error) throw error;
     if (!data) throw new Error('Profile update failed');
 
-    return data;
+    const row = data as UserProfileRow;
+    return {
+      userId: row.user_id,
+      nickname: row.nickname,
+      description: row.description,
+      profileImageUrl: row.profile_image_url,
+      followerCount: row.follower_count,
+      followingCount: row.following_count,
+      postCount: row.post_count,
+      createdAt: row.created_at,
+    };
   },
 };
 

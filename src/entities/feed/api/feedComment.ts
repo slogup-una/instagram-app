@@ -32,7 +32,15 @@
 
 import { supabase } from '../../../shared/api/supabase';
 
-export interface FeedComment {
+/**
+ * NOTE
+ * - Supabase(DB) 응답은 snake_case (Row/DTO)
+ * - 앱 내부에서 사용할 모델은 camelCase (Model)
+ * - feedCommentAPI가 그 경계(매핑) 역할을 한다.
+ */
+
+// ===== DB Row (snake_case) =====
+export interface FeedCommentRow {
   id: number;
   feed_id: number;
   user_id: string;
@@ -41,12 +49,12 @@ export interface FeedComment {
   created_at: string;
 }
 
-export interface FeedCommentWithProfile extends FeedComment {
+export interface FeedCommentWithProfileRow extends FeedCommentRow {
   user_profiles: {
     nickname: string | null;
     profile_image_url: string | null;
   };
-  replies?: FeedCommentWithProfile[]; // 대댓글 목록
+  replies?: FeedCommentWithProfileRow[]; // 대댓글 목록 (row 기준)
 }
 
 export interface CreateCommentParams {
@@ -54,6 +62,46 @@ export interface CreateCommentParams {
   content: string;
   parentCommentId?: number | null; // 대댓글인 경우 부모 댓글 ID
 }
+
+// ===== App Model (camelCase) =====
+export interface FeedComment {
+  id: number;
+  feedId: number;
+  userId: string;
+  parentCommentId: number | null;
+  content: string;
+  createdAt: string;
+}
+
+export interface FeedCommentUserProfile {
+  nickname: string | null;
+  profileImageUrl: string | null;
+}
+
+export interface FeedCommentWithProfile extends FeedComment {
+  userProfiles: FeedCommentUserProfile;
+  replies?: FeedCommentWithProfile[]; // 대댓글 목록
+}
+
+const mapFeedComment = (row: FeedCommentRow): FeedComment => ({
+  id: row.id,
+  feedId: row.feed_id,
+  userId: row.user_id,
+  parentCommentId: row.parent_comment_id,
+  content: row.content,
+  createdAt: row.created_at,
+});
+
+const mapFeedCommentWithProfile = (
+  row: FeedCommentWithProfileRow
+): FeedCommentWithProfile => ({
+  ...mapFeedComment(row),
+  userProfiles: {
+    nickname: row.user_profiles?.nickname ?? null,
+    profileImageUrl: row.user_profiles?.profile_image_url ?? null,
+  },
+  // replies는 getComments에서 별도로 구성
+});
 
 export const feedCommentAPI = {
   /**
@@ -85,7 +133,7 @@ export const feedCommentAPI = {
 
     // ✅ Trigger가 자동으로 카운트 증가 처리
 
-    return data;
+    return mapFeedComment(data as FeedCommentRow);
   },
 
   /**
@@ -110,7 +158,7 @@ export const feedCommentAPI = {
       .single();
 
     if (fetchError) throw fetchError;
-    if (existingComment.user_id !== user.id) {
+    if ((existingComment as { user_id: string }).user_id !== user.id) {
       throw new Error('Not authorized to update this comment');
     }
 
@@ -122,7 +170,7 @@ export const feedCommentAPI = {
       .single();
 
     if (error) throw error;
-    return data;
+    return mapFeedComment(data as FeedCommentRow);
   },
 
   /**
@@ -142,7 +190,7 @@ export const feedCommentAPI = {
       .single();
 
     if (fetchError) throw fetchError;
-    if (existingComment.user_id !== user.id) {
+    if ((existingComment as { user_id: string }).user_id !== user.id) {
       throw new Error('Not authorized to delete this comment');
     }
 
@@ -180,18 +228,20 @@ export const feedCommentAPI = {
     if (error) throw error;
 
     // 댓글과 대댓글 분리
-    const comments = (data || []) as FeedCommentWithProfile[];
+    const rows = (data || []) as FeedCommentWithProfileRow[];
+    const comments = rows.map(mapFeedCommentWithProfile);
+
     const topLevelComments = comments.filter(
-      (comment) => comment.parent_comment_id === null
+      (comment) => comment.parentCommentId === null
     );
     const replies = comments.filter(
-      (comment) => comment.parent_comment_id !== null
+      (comment) => comment.parentCommentId !== null
     );
 
     // 대댓글을 부모 댓글의 replies에 추가
     topLevelComments.forEach((comment) => {
       comment.replies = replies.filter(
-        (reply) => reply.parent_comment_id === comment.id
+        (reply) => reply.parentCommentId === comment.id
       );
     });
 
@@ -224,6 +274,7 @@ export const feedCommentAPI = {
       if (error.code === 'PGRST116') return null;
       throw error;
     }
-    return data;
+    if (!data) return null;
+    return mapFeedCommentWithProfile(data as FeedCommentWithProfileRow);
   },
 };

@@ -4,7 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import ThemeToggle from '../widgets/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../shared/api/supabase';
-import { authAPI, UserProfile } from '../entities/auth';
+import { authAPI } from '../entities/auth';
+import type { UserProfile } from '../entities/user';
 
 function ProfileScreen() {
   const { theme } = useTheme();
@@ -64,9 +65,9 @@ function ProfileScreen() {
     >
       {profile && (
         <>
-          {profile.profile_image_url ? (
+          {profile.profileImageUrl ? (
             <Image
-              source={{ uri: profile.profile_image_url }}
+              source={{ uri: profile.profileImageUrl }}
               style={{
                 width: 100,
                 height: 100,
@@ -128,7 +129,7 @@ function ProfileScreen() {
                   color: theme.textPrimary,
                 }}
               >
-                {profile.post_count}
+                {profile.postCount}
               </Text>
               <Text style={{ fontSize: 12, color: theme.textSecondary }}>
                 게시물
@@ -142,7 +143,7 @@ function ProfileScreen() {
                   color: theme.textPrimary,
                 }}
               >
-                {profile.follower_count}
+                {profile.followerCount}
               </Text>
               <Text style={{ fontSize: 12, color: theme.textSecondary }}>
                 팔로워
@@ -156,7 +157,7 @@ function ProfileScreen() {
                   color: theme.textPrimary,
                 }}
               >
-                {profile.following_count}
+                {profile.followingCount}
               </Text>
               <Text style={{ fontSize: 12, color: theme.textSecondary }}>
                 팔로잉

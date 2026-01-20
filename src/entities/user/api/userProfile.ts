@@ -13,7 +13,15 @@
 
 import { supabase } from '../../../shared/api/supabase';
 
-export interface UserProfile {
+/**
+ * NOTE
+ * - Supabase(DB) 응답은 snake_case (Row/DTO)
+ * - 앱 내부에서 사용할 모델은 camelCase (Model)
+ * - userProfileAPI가 그 경계(매핑) 역할을 한다.
+ */
+
+// ===== DB Row (snake_case) =====
+export interface UserProfileRow {
   user_id: string;
   nickname: string | null;
   description: string | null;
@@ -23,6 +31,29 @@ export interface UserProfile {
   post_count: number;
   created_at: string;
 }
+
+// ===== App Model (camelCase) =====
+export interface UserProfile {
+  userId: string;
+  nickname: string | null;
+  description: string | null;
+  profileImageUrl: string | null;
+  followerCount: number;
+  followingCount: number;
+  postCount: number;
+  createdAt: string;
+}
+
+const mapUserProfile = (row: UserProfileRow): UserProfile => ({
+  userId: row.user_id,
+  nickname: row.nickname,
+  description: row.description,
+  profileImageUrl: row.profile_image_url,
+  followerCount: row.follower_count,
+  followingCount: row.following_count,
+  postCount: row.post_count,
+  createdAt: row.created_at,
+});
 
 export const userProfileAPI = {
   /**
@@ -41,7 +72,8 @@ export const userProfileAPI = {
       if (error.code === 'PGRST116') return null; // 데이터 없음
       throw error;
     }
-    return data;
+    if (!data) return null;
+    return mapUserProfile(data as UserProfileRow);
   },
 
   /**
@@ -58,6 +90,6 @@ export const userProfileAPI = {
       .in('user_id', userIds);
 
     if (error) throw error;
-    return data || [];
+    return (data as UserProfileRow[] | null | undefined)?.map(mapUserProfile) ?? [];
   },
 };

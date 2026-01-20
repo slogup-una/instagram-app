@@ -155,7 +155,7 @@ export const testFeedAPI = async () => {
   
       // 5️⃣ 공유 목록 조회 후 shared_count 확인
       const feedsAfterShare = await feedAPI.getFeed(feedId);
-      console.log('피드 shared_count 확인:', feedsAfterShare.shared_count);
+      console.log('피드 sharedCount 확인:', feedsAfterShare?.sharedCount);
   
       await feedAPI.deleteFeed(feedId);
       console.log('feed cleanup success');

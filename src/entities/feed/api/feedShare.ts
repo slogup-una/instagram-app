@@ -13,17 +13,40 @@
 
 import { supabase } from '../../../shared/api/supabase';
 
-export interface FeedShare {
+/**
+ * NOTE
+ * - Supabase(DB) 응답은 snake_case (Row/DTO)
+ * - 앱 내부에서 사용할 모델은 camelCase (Model)
+ * - feedShareAPI가 그 경계(매핑) 역할을 한다.
+ */
+
+// ===== DB Row (snake_case) =====
+export interface FeedShareRow {
   id: number;
   feed_id: number;
   user_id: string;
   created_at: string;
 }
 
+// ===== App Model (camelCase) =====
+export interface FeedShare {
+  id: number;
+  feedId: number;
+  userId: string;
+  createdAt: string;
+}
+
 export interface GetSharedFeedsParams {
   limit?: number;
   offset?: number;
 }
+
+const mapFeedShare = (row: FeedShareRow): FeedShare => ({
+  id: row.id,
+  feedId: row.feed_id,
+  userId: row.user_id,
+  createdAt: row.created_at,
+});
 
 export const feedShareAPI = {
   /**
@@ -47,7 +70,7 @@ export const feedShareAPI = {
   
     // ✅ Trigger가 자동으로 카운트 증가 처리
 
-    return data;
+    return mapFeedShare(data as FeedShareRow);
   },
 
   /**
@@ -72,6 +95,6 @@ export const feedShareAPI = {
       .range(offset, offset + limit - 1);
 
     if (error) throw error;
-    return data || [];
+    return (data as FeedShareRow[] | null | undefined)?.map(mapFeedShare) ?? [];
   },
 };

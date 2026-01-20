@@ -19,16 +19,37 @@
 
 import { supabase } from '../../../shared/api/supabase';
 
-export interface FeedLike {
+/**
+ * NOTE
+ * - Supabase(DB) 응답은 snake_case (Row/DTO)
+ * - 앱 내부에서 사용할 모델은 camelCase (Model)
+ * - feedLikeAPI가 그 경계(매핑) 역할을 한다.
+ */
+
+// ===== DB Row (snake_case) =====
+export interface FeedLikeRow {
   feed_id: number;
   user_id: string;
   created_at: string;
+}
+
+// ===== App Model (camelCase) =====
+export interface FeedLike {
+  feedId: number;
+  userId: string;
+  createdAt: string;
 }
 
 export interface GetLikedFeedsParams {
   limit?: number;
   offset?: number;
 }
+
+const mapFeedLike = (row: FeedLikeRow): FeedLike => ({
+  feedId: row.feed_id,
+  userId: row.user_id,
+  createdAt: row.created_at,
+});
 
 export const feedLikeAPI = {
   /**
@@ -58,7 +79,7 @@ export const feedLikeAPI = {
     }
   
     // ✅ Trigger가 자동으로 카운트 증가 처리
-    return data;
+    return mapFeedLike(data as FeedLikeRow);
   },
   
 
@@ -158,6 +179,6 @@ export const feedLikeAPI = {
       .range(offset, offset + limit - 1);
 
     if (error) throw error;
-    return data || [];
+    return (data as FeedLikeRow[] | null | undefined)?.map(mapFeedLike) ?? [];
   },
 };

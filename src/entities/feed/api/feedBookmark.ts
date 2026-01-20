@@ -19,16 +19,37 @@
 
 import { supabase } from '../../../shared/api/supabase';
 
-export interface FeedBookmark {
+/**
+ * NOTE
+ * - Supabase(DB) 응답은 snake_case (Row/DTO)
+ * - 앱 내부에서 사용할 모델은 camelCase (Model)
+ * - feedBookmarkAPI가 그 경계(매핑) 역할을 한다.
+ */
+
+// ===== DB Row (snake_case) =====
+export interface FeedBookmarkRow {
   feed_id: number;
   user_id: string;
   created_at: string;
+}
+
+// ===== App Model (camelCase) =====
+export interface FeedBookmark {
+  feedId: number;
+  userId: string;
+  createdAt: string;
 }
 
 export interface GetBookmarkedFeedsParams {
   limit?: number;
   offset?: number;
 }
+
+const mapFeedBookmark = (row: FeedBookmarkRow): FeedBookmark => ({
+  feedId: row.feed_id,
+  userId: row.user_id,
+  createdAt: row.created_at,
+});
 
 export const feedBookmarkAPI = {
   /**
@@ -58,7 +79,7 @@ export const feedBookmarkAPI = {
       throw error;
     }
   
-    return data;
+    return mapFeedBookmark(data as FeedBookmarkRow);
   },
 
   /**
@@ -158,6 +179,6 @@ export const feedBookmarkAPI = {
       .range(offset, offset + limit - 1);
 
     if (error) throw error;
-    return data || [];
+    return (data as FeedBookmarkRow[] | null | undefined)?.map(mapFeedBookmark) ?? [];
   },
 };
