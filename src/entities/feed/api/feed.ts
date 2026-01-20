@@ -28,6 +28,8 @@
 
 import { supabase } from '../../../shared/api/supabase';
 import { publicFetchAPI } from '../../../shared/api/fetchAPI';
+import { feedLikeAPI } from './feedLike';
+import { feedBookmarkAPI } from './feedBookmark';
 
 // 기존코드
 export const getFeeds = async () => {
@@ -74,6 +76,10 @@ export interface Feed {
   commentsCount: number;
   sharedCount: number;
   createdAt: string;
+  /** 현재 로그인한 사용자가 좋아요 했는지 여부 (선택 필드) */
+  isLiked?: boolean;
+  /** 현재 로그인한 사용자가 북마크 했는지 여부 (선택 필드) */
+  isBookmarked?: boolean;
 }
 
 export interface UserProfile {
@@ -149,6 +155,35 @@ export const feedAPI = {
   },
 
   /**
+   * 피드 목록 + 현재 사용자 기준 좋아요/북마크 여부까지 함께 조회
+   * @param params - limit, offset
+   * @returns FeedWithProfile 배열 (isLiked, isBookmarked 포함)
+   */
+  getFeedsWithStatus: async (
+    params: GetFeedsParams = {}
+  ): Promise<FeedWithProfile[]> => {
+    // 1) 기본 피드 목록 조회
+    const baseFeeds = await feedAPI.getFeeds(params);
+    if (baseFeeds.length === 0) return baseFeeds;
+
+    // 2) 피드 ID 목록 추출
+    const feedIds = baseFeeds.map((feed) => feed.id);
+
+    // 3) 좋아요/북마크 여부를 병렬로 조회
+    const [likedMap, bookmarkedMap] = await Promise.all([
+      feedLikeAPI.areLiked(feedIds),
+      feedBookmarkAPI.areBookmarked(feedIds),
+    ]);
+
+    // 4) map 결과를 모델에 합쳐서 반환
+    return baseFeeds.map((feed) => ({
+      ...feed,
+      isLiked: !!likedMap[feed.id],
+      isBookmarked: !!bookmarkedMap[feed.id],
+    }));
+  },
+
+  /**
    * 특정 피드 조회
    * @param feedId - 피드 ID
    * @returns FeedWithProfile 또는 null
@@ -174,6 +209,27 @@ export const feedAPI = {
     }
     if (!data) return null;
     return mapFeedWithProfile(data as FeedWithProfileRow);
+  },
+
+  /**
+   * 단일 피드 + 현재 사용자 기준 좋아요/북마크 여부까지 함께 조회
+   * @param feedId - 피드 ID
+   * @returns FeedWithProfile 또는 null (isLiked, isBookmarked 포함)
+   */
+  getFeedWithStatus: async (feedId: number): Promise<FeedWithProfile | null> => {
+    const baseFeed = await feedAPI.getFeed(feedId);
+    if (!baseFeed) return null;
+
+    const [isLiked, isBookmarked] = await Promise.all([
+      feedLikeAPI.isLiked(feedId),
+      feedBookmarkAPI.isBookmarked(feedId),
+    ]);
+
+    return {
+      ...baseFeed,
+      isLiked,
+      isBookmarked,
+    };
   },
 
   /**
