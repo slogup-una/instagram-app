@@ -22,6 +22,7 @@
 
 import { supabase } from '../../../shared/api/supabase';
 import { UserProfile, UserProfileRow } from '../../user/api/userProfile';
+import { getCurrentUser, requireCurrentUser } from '../../../shared/api/authUtils';
 
 export interface SignUpParams {
   email: string;
@@ -107,8 +108,7 @@ export const authAPI = {
 
   // 현재 유저의 프로필 정보 가져오기
   getCurrentUserProfile: async (): Promise<UserProfile | null> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
+    const user = await getCurrentUser();
     if (!user) return null;
 
     const { data, error } = await supabase
@@ -161,9 +161,7 @@ export const authAPI = {
   updateUserProfile: async (
     params: UpdateProfileParams
   ): Promise<UserProfile> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('User not authenticated');
+    const user = await requireCurrentUser();
 
     // 수정할 데이터만 필터링 (undefined 제외)
     // DB 컬럼명(snake_case)으로 업데이트해야 해서 여기서만 매핑

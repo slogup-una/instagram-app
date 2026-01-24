@@ -24,6 +24,7 @@
  */
 
 import { supabase } from '../../../shared/api/supabase';
+import { requireCurrentUser, getCurrentUser } from '../../../shared/api/authUtils';
 
 /**
  * NOTE
@@ -148,8 +149,7 @@ export const followAPI = {
    * @returns 팔로우 여부
    */
   isFollowing: async (userId: string): Promise<boolean> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
+    const user = await getCurrentUser();
     if (!user) return false;
 
     const { data, error } = await supabase
@@ -175,8 +175,7 @@ export const followAPI = {
   areFollowing: async (
     userIds: string[]
   ): Promise<Record<string, boolean>> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
+    const user = await getCurrentUser();
     if (!user) return {};
 
     if (userIds.length === 0) return {};
@@ -209,9 +208,7 @@ export const followAPI = {
   getFollowers: async (
     params: GetFollowsParams = {}
   ): Promise<FollowWithProfile[]> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('User not authenticated');
+    const user = await requireCurrentUser();
 
     const { limit = 10, offset = 0 } = params;
 
@@ -243,9 +240,7 @@ export const followAPI = {
   getFollowings: async (
     params: GetFollowsParams = {}
   ): Promise<FollowWithProfile[]> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('User not authenticated');
+    const user = await requireCurrentUser();
 
     const { limit = 10, offset = 0 } = params;
 
@@ -278,10 +273,7 @@ export const followAPI = {
     let targetUserId = userId;
 
     if (!targetUserId) {
-      const { data: { user }, error: userError } =
-        await supabase.auth.getUser();
-      if (userError) throw userError;
-      if (!user) throw new Error('User not authenticated');
+      const user = await requireCurrentUser();
       targetUserId = user.id;
     }
 

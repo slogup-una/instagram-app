@@ -18,6 +18,7 @@
  */
 
 import { supabase } from '../../../shared/api/supabase';
+import { requireCurrentUser, getCurrentUser } from '../../../shared/api/authUtils';
 
 /**
  * NOTE
@@ -58,9 +59,7 @@ export const feedLikeAPI = {
    * @returns FeedLike
    */
   likeFeed: async (feedId: number): Promise<FeedLike> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('User not authenticated');
+    const user = await requireCurrentUser();
   
     const { data, error } = await supabase
       .from('feed_likes')
@@ -88,9 +87,7 @@ export const feedLikeAPI = {
    * @param feedId - 피드 ID
    */
   unlikeFeed: async (feedId: number): Promise<void> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('User not authenticated');
+    const user = await requireCurrentUser();
   
     const { error } = await supabase
       .from('feed_likes')
@@ -109,8 +106,7 @@ export const feedLikeAPI = {
    * @returns 좋아요 여부
    */
   isLiked: async (feedId: number): Promise<boolean> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
+    const user = await getCurrentUser();
     if (!user) return false;
   
     const { data, error } = await supabase
@@ -131,8 +127,7 @@ export const feedLikeAPI = {
    * @returns feedId를 key로 하는 좋아요 여부 Map
    */
   areLiked: async (feedIds: number[]): Promise<Record<number, boolean>> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
+    const user = await getCurrentUser();
     if (!user) return {};
 
     if (feedIds.length === 0) return {};
@@ -165,9 +160,7 @@ export const feedLikeAPI = {
   getLikedFeeds: async (
     params: GetLikedFeedsParams = {}
   ): Promise<FeedLike[]> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('User not authenticated');
+    const user = await requireCurrentUser();
 
     const { limit = 10, offset = 0 } = params;
 

@@ -31,6 +31,7 @@
  */
 
 import { supabase } from '../../../shared/api/supabase';
+import { requireCurrentUser } from '../../../shared/api/authUtils';
 
 /**
  * NOTE
@@ -112,9 +113,7 @@ export const feedCommentAPI = {
   createComment: async (
     params: CreateCommentParams
   ): Promise<FeedComment> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('User not authenticated');
+    const user = await requireCurrentUser();
 
     const { data, error } = await supabase
       .from('feed_comments')
@@ -146,9 +145,7 @@ export const feedCommentAPI = {
     commentId: number,
     content: string
   ): Promise<FeedComment> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('User not authenticated');
+    const user = await requireCurrentUser();
 
     // 본인 댓글인지 확인
     const { data: existingComment, error: fetchError } = await supabase
@@ -178,9 +175,7 @@ export const feedCommentAPI = {
    * @param commentId - 댓글 ID
    */
   deleteComment: async (commentId: number): Promise<void> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('User not authenticated');
+    const user = await requireCurrentUser();
 
     // 본인 댓글인지 확인 및 feed_id 가져오기
     const { data: existingComment, error: fetchError } = await supabase

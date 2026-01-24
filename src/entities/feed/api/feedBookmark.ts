@@ -18,6 +18,7 @@
  */
 
 import { supabase } from '../../../shared/api/supabase';
+import { requireCurrentUser, getCurrentUser } from '../../../shared/api/authUtils';
 
 /**
  * NOTE
@@ -58,9 +59,7 @@ export const feedBookmarkAPI = {
    * @returns FeedBookmark
    */
   bookmarkFeed: async (feedId: number): Promise<FeedBookmark> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('User not authenticated');
+    const user = await requireCurrentUser();
   
     const { data, error } = await supabase
       .from('feed_bookmarks')
@@ -87,9 +86,7 @@ export const feedBookmarkAPI = {
    * @param feedId - 피드 ID
    */
   unbookmarkFeed: async (feedId: number): Promise<void> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('User not authenticated');
+    const user = await requireCurrentUser();
 
     const { error } = await supabase
       .from('feed_bookmarks')
@@ -106,8 +103,7 @@ export const feedBookmarkAPI = {
    * @returns 북마크 여부
    */
   isBookmarked: async (feedId: number): Promise<boolean> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
+    const user = await getCurrentUser();
     if (!user) return false;
   
     const { data, error } = await supabase
@@ -131,8 +127,7 @@ export const feedBookmarkAPI = {
   areBookmarked: async (
     feedIds: number[]
   ): Promise<Record<number, boolean>> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
+    const user = await getCurrentUser();
     if (!user) return {};
 
     if (feedIds.length === 0) return {};
@@ -165,9 +160,7 @@ export const feedBookmarkAPI = {
   getBookmarkedFeeds: async (
     params: GetBookmarkedFeedsParams = {}
   ): Promise<FeedBookmark[]> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('User not authenticated');
+    const user = await requireCurrentUser();
 
     const { limit = 10, offset = 0 } = params;
 

@@ -30,6 +30,7 @@ import { supabase } from '../../../shared/api/supabase';
 import { publicFetchAPI } from '../../../shared/api/fetchAPI';
 import { feedLikeAPI } from './feedLike';
 import { feedBookmarkAPI } from './feedBookmark';
+import { requireCurrentUser } from '../../../shared/api/authUtils';
 
 // 기존코드
 export const getFeeds = async () => {
@@ -238,9 +239,7 @@ export const feedAPI = {
    * @returns 생성된 Feed
    */
   createFeed: async (params: CreateFeedParams): Promise<Feed> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('User not authenticated');
+    const user = await requireCurrentUser();
 
     const { data, error } = await supabase
       .from('feeds')
@@ -271,9 +270,7 @@ export const feedAPI = {
     feedId: number,
     params: UpdateFeedParams
   ): Promise<Feed> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('User not authenticated');
+    const user = await requireCurrentUser();
 
     // 본인 피드인지 확인
     const { data: existingFeed, error: fetchError } = await supabase
@@ -303,9 +300,7 @@ export const feedAPI = {
    * @param feedId - 피드 ID
    */
   deleteFeed: async (feedId: number): Promise<void> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('User not authenticated');
+    const user = await requireCurrentUser();
 
     // 본인 피드인지 확인
     const { data: existingFeed, error: fetchError } = await supabase
@@ -333,9 +328,7 @@ export const feedAPI = {
    * @returns Feed 배열
    */
   getMyFeeds: async (params: GetFeedsParams = {}): Promise<Feed[]> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('User not authenticated');
+    const user = await requireCurrentUser();
 
     const { limit = 10, offset = 0 } = params;
 

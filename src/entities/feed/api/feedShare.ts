@@ -12,6 +12,7 @@
  */
 
 import { supabase } from '../../../shared/api/supabase';
+import { requireCurrentUser } from '../../../shared/api/authUtils';
 
 /**
  * NOTE
@@ -55,9 +56,7 @@ export const feedShareAPI = {
    * @returns FeedShare
    */
   shareFeed: async (feedId: number): Promise<FeedShare> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('User not authenticated');
+    const user = await requireCurrentUser();
   
     // insert만 수행 → 중복 허용
     const { data, error } = await supabase
@@ -81,9 +80,7 @@ export const feedShareAPI = {
   getSharedFeeds: async (
     params: GetSharedFeedsParams = {}
   ): Promise<FeedShare[]> => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('User not authenticated');
+    const user = await requireCurrentUser();
 
     const { limit = 10, offset = 0 } = params;
 
