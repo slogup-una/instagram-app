@@ -6,418 +6,626 @@ import {feedCommentAPI} from './feed/api/feedComment';
 import {followAPI} from './follow/api/follow';
 import {userProfileAPI} from './user/api/userProfile';
 
+/**
+ * 테스트 헬퍼 함수들
+ */
+const testHelpers = {
+  /**
+   * 테스트 단계 시작
+   */
+  step: (stepNumber: number, description: string) => {
+    console.log(`\n🔹 [${stepNumber}] ${description}`);
+  },
+
+  /**
+   * 테스트 성공 로그
+   */
+  success: (message: string, data?: any) => {
+    console.log(`✅ [성공] ${message}`, data || '');
+  },
+
+  /**
+   * 테스트 실패 로그
+   */
+  fail: (message: string, error?: any) => {
+    console.error(`❌ [실패] ${message}`, error || '');
+  },
+
+  /**
+   * 테스트 예상값 검증
+   */
+  expect: <T>(actual: T, expected: T, message: string): boolean => {
+    const isMatch = JSON.stringify(actual) === JSON.stringify(expected);
+    if (isMatch) {
+      testHelpers.success(`${message} (예상: ${JSON.stringify(expected)}, 실제: ${JSON.stringify(actual)})`);
+      return true;
+    } else {
+      testHelpers.fail(`${message} (예상: ${JSON.stringify(expected)}, 실제: ${JSON.stringify(actual)})`);
+      return false;
+    }
+  },
+
+  /**
+   * 테스트 예상값 검증 (불리언)
+   */
+  expectBoolean: (actual: boolean, expected: boolean, message: string): boolean => {
+    if (actual === expected) {
+      testHelpers.success(`${message} (예상: ${expected}, 실제: ${actual})`);
+      return true;
+    } else {
+      testHelpers.fail(`${message} (예상: ${expected}, 실제: ${actual})`);
+      return false;
+    }
+  },
+
+  /**
+   * 테스트 예상값 검증 (null이 아님)
+   */
+  expectNotNull: <T>(actual: T | null, message: string): boolean => {
+    if (actual !== null && actual !== undefined) {
+      testHelpers.success(`${message} (값 존재함)`);
+      return true;
+    } else {
+      testHelpers.fail(`${message} (값이 null 또는 undefined)`);
+      return false;
+    }
+  },
+
+  /**
+   * 테스트 예상값 검증 (배열 길이)
+   */
+  expectLength: <T>(actual: T[], expectedLength: number, message: string): boolean => {
+    if (actual.length === expectedLength) {
+      testHelpers.success(`${message} (예상 길이: ${expectedLength}, 실제 길이: ${actual.length})`);
+      return true;
+    } else {
+      testHelpers.fail(`${message} (예상 길이: ${expectedLength}, 실제 길이: ${actual.length})`);
+      return false;
+    }
+  },
+
+  /**
+   * 테스트 섹션 시작
+   */
+  section: (title: string) => {
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`📋 ${title}`);
+    console.log('='.repeat(60));
+  },
+
+  /**
+   * 테스트 섹션 종료
+   */
+  sectionEnd: (title: string, passed: number, failed: number) => {
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`📊 ${title} 결과`);
+    console.log(`✅ 성공: ${passed}개`);
+    console.log(`❌ 실패: ${failed}개`);
+    console.log(`📈 성공률: ${passed + failed > 0 ? Math.round((passed / (passed + failed)) * 100) : 0}%`);
+    console.log('='.repeat(60));
+  },
+};
+
 export const testFeedAPI = async () => {
-    console.log('--- testFeedAPI start ---');
+    testHelpers.section('FeedAPI 테스트');
+    let passed = 0;
+    let failed = 0;
+
     try {
-      console.log('--- [1] createFeed ---');
+      testHelpers.step(1, '피드 생성');
       const created = await feedAPI.createFeed({
         images: ['https://test.com/test.jpg'],
         caption: 'test feed',
       });
-      console.log('created', created);
-  
+      if (testHelpers.expectNotNull(created, '피드 생성')) {
+        passed++;
+      } else {
+        failed++;
+      }
       const feedId = created.id;
   
-      console.log('--- [2] getFeed ---');
+      testHelpers.step(2, '피드 조회');
       const feed = await feedAPI.getFeed(feedId);
-      console.log('getFeed', feed);
+      if (testHelpers.expect(feed?.id, feedId, '피드 ID 일치')) {
+        passed++;
+      } else {
+        failed++;
+      }
 
-      console.log('--- [2-1] getFeedWithStatus (before like/bookmark) ---');
+      testHelpers.step(2.1, '피드 상태 조회 (좋아요/북마크 전)');
       const feedWithStatusBefore = await feedAPI.getFeedWithStatus(feedId);
-      console.log(
-        '[getFeedWithStatus before]',
-        {
-          id: feedWithStatusBefore?.id,
-          isLiked: feedWithStatusBefore?.isLiked,
-          isBookmarked: feedWithStatusBefore?.isBookmarked,
-        }
-      );
+      if (testHelpers.expectBoolean(feedWithStatusBefore?.isLiked || false, false, '좋아요 상태 (false)') &&
+          testHelpers.expectBoolean(feedWithStatusBefore?.isBookmarked || false, false, '북마크 상태 (false)')) {
+        passed += 2;
+      } else {
+        failed += 2;
+      }
   
-      console.log('--- [3] getFeeds ---');
+      testHelpers.step(3, '피드 목록 조회');
       const feeds = await feedAPI.getFeeds({ limit: 5 });
-      console.log('getFeeds', feeds);
+      if (testHelpers.expectLength(feeds, 5, '피드 목록 길이')) {
+        passed++;
+      } else {
+        failed++;
+      }
 
-      console.log('--- [3-1] getFeedsWithStatus (before like/bookmark) ---');
+      testHelpers.step(3.1, '피드 목록 상태 조회 (좋아요/북마크 전)');
       const feedsWithStatusBefore = await feedAPI.getFeedsWithStatus({ limit: 5 });
-      console.log(
-        '[getFeedsWithStatus before] sample',
-        feedsWithStatusBefore.slice(0, 3).map((f) => ({
-          id: f.id,
-          isLiked: f.isLiked,
-          isBookmarked: f.isBookmarked,
-        }))
-      );
+      testHelpers.success('피드 목록 상태 조회 완료', feedsWithStatusBefore.slice(0, 3).map((f) => ({
+        id: f.id,
+        isLiked: f.isLiked,
+        isBookmarked: f.isBookmarked,
+      })));
 
-      console.log('--- [3-2] like + bookmark this feed ---');
+      testHelpers.step(3.2, '좋아요 및 북마크 추가');
       await feedLikeAPI.likeFeed(feedId);
       await feedBookmarkAPI.bookmarkFeed(feedId);
-      console.log('like/bookmark done');
+      testHelpers.success('좋아요 및 북마크 추가 완료');
 
-      console.log('--- [3-3] getFeedWithStatus (after like/bookmark) ---');
+      testHelpers.step(3.3, '피드 상태 조회 (좋아요/북마크 후)');
       const feedWithStatusAfter = await feedAPI.getFeedWithStatus(feedId);
-      console.log(
-        '[getFeedWithStatus after]',
-        {
-          id: feedWithStatusAfter?.id,
-          isLiked: feedWithStatusAfter?.isLiked,
-          isBookmarked: feedWithStatusAfter?.isBookmarked,
-        }
-      );
+      if (testHelpers.expectBoolean(feedWithStatusAfter?.isLiked || false, true, '좋아요 상태 (true)') &&
+          testHelpers.expectBoolean(feedWithStatusAfter?.isBookmarked || false, true, '북마크 상태 (true)')) {
+        passed += 2;
+      } else {
+        failed += 2;
+      }
 
-      console.log('--- [3-4] getFeedsWithStatus (after like/bookmark) ---');
+      testHelpers.step(3.4, '피드 목록 상태 조회 (좋아요/북마크 후)');
       const feedsWithStatusAfter = await feedAPI.getFeedsWithStatus({ limit: 5 });
       const target = feedsWithStatusAfter.find((f) => f.id === feedId);
-      console.log(
-        '[getFeedsWithStatus after] target',
-        {
-          id: target?.id,
-          isLiked: target?.isLiked,
-          isBookmarked: target?.isBookmarked,
-        }
-      );
+      if (testHelpers.expectBoolean(target?.isLiked || false, true, '목록에서 좋아요 상태 (true)') &&
+          testHelpers.expectBoolean(target?.isBookmarked || false, true, '목록에서 북마크 상태 (true)')) {
+        passed += 2;
+      } else {
+        failed += 2;
+      }
   
-      console.log('--- [4] updateFeed ---');
+      testHelpers.step(4, '피드 수정');
       const updated = await feedAPI.updateFeed(feedId, {
         caption: 'updated caption',
       });
-      console.log('updated', updated);
+      if (testHelpers.expect(updated.caption, 'updated caption', '피드 캡션 수정')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-      console.log('--- [5] deleteFeed ---');
+      testHelpers.step(5, '피드 삭제');
       await feedAPI.deleteFeed(feedId);
-      console.log('delete success');
+      testHelpers.success('피드 삭제 완료');
+      passed++;
     } catch (e) {
-      console.error('❌ feedAPI test error', e);
+      testHelpers.fail('FeedAPI 테스트 중 에러 발생', e);
+      failed++;
+    } finally {
+      testHelpers.sectionEnd('FeedAPI 테스트', passed, failed);
     }
   };
   
   export const testFeedBookmarkAPI = async () => {
-    console.log('--- testFeedBookmarkAPI start ---');
+    testHelpers.section('FeedBookmarkAPI 테스트');
+    let passed = 0;
+    let failed = 0;
+
     try {
-      console.log('--- [1] createFeed ---');
+      testHelpers.step(1, '테스트용 피드 생성');
       const feed = await feedAPI.createFeed({
         images: ['https://test.com/test.jpg'],
         caption: 'bookmark test feed',
       });
-      console.log('created feed', { id: feed.id, caption: feed.caption });
-  
+      if (testHelpers.expectNotNull(feed, '피드 생성')) {
+        passed++;
+      } else {
+        failed++;
+      }
       const feedId = feed.id;
   
-      console.log('--- [2] isBookmarked (before) ---');
+      testHelpers.step(2, '북마크 여부 확인 (북마크 전)');
       const before = await feedBookmarkAPI.isBookmarked(feedId);
-      console.log('isBookmarked before (expect false):', before);
+      if (testHelpers.expectBoolean(before, false, '북마크 여부 (false)')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-      console.log('--- [3] bookmarkFeed ---');
+      testHelpers.step(3, '북마크 추가');
       const bookmark = await feedBookmarkAPI.bookmarkFeed(feedId);
-      console.log('bookmarked', {
-        feedId: bookmark.feedId,
-        userId: bookmark.userId,
-        createdAt: bookmark.createdAt,
-      });
+      if (testHelpers.expect(bookmark.feedId, feedId, '북마크 추가')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-      console.log('--- [4] isBookmarked (after) ---');
+      testHelpers.step(4, '북마크 여부 확인 (북마크 후)');
       const after = await feedBookmarkAPI.isBookmarked(feedId);
-      console.log('isBookmarked after (expect true):', after);
+      if (testHelpers.expectBoolean(after, true, '북마크 여부 (true)')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-      console.log('--- [5] areBookmarked ---');
+      testHelpers.step(5, '여러 피드 북마크 여부 확인');
       const map = await feedBookmarkAPI.areBookmarked([feedId, 999999]);
-      console.log('areBookmarked map (expect true/false):', map);
+      if (testHelpers.expectBoolean(map[feedId] || false, true, '북마크된 피드 확인') &&
+          testHelpers.expectBoolean(map[999999] || false, false, '북마크 안 된 피드 확인')) {
+        passed += 2;
+      } else {
+        failed += 2;
+      }
   
-      console.log('--- [6] getBookmarkedFeeds ---');
+      testHelpers.step(6, '북마크한 피드 목록 조회');
       const list = await feedBookmarkAPI.getBookmarkedFeeds({ limit: 10 });
-      console.log(
-        'bookmarked feeds (ids):',
-        list.map((b) => b.feedId)
-      );
+      const hasFeedId = list.some((b) => b.feedId === feedId);
+      if (testHelpers.expectBoolean(hasFeedId, true, '북마크 목록에 피드 포함')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-      console.log('--- [7] unbookmarkFeed ---');
+      testHelpers.step(7, '북마크 취소');
       await feedBookmarkAPI.unbookmarkFeed(feedId);
-      console.log('unbookmark success');
+      testHelpers.success('북마크 취소 완료');
+      passed++;
   
-      console.log('--- [8] isBookmarked (after delete) ---');
+      testHelpers.step(8, '북마크 여부 확인 (취소 후)');
       const afterDelete = await feedBookmarkAPI.isBookmarked(feedId);
-      console.log('isBookmarked after delete (expect false):', afterDelete);
+      if (testHelpers.expectBoolean(afterDelete, false, '북마크 여부 (false)')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-      console.log('--- [9] cleanup feed ---');
+      testHelpers.step(9, '테스트 피드 정리');
       await feedAPI.deleteFeed(feedId);
-      console.log('feed cleanup success');
+      testHelpers.success('피드 정리 완료');
+      passed++;
     } catch (e) {
-      console.error('❌ feedBookmarkAPI test error', e);
+      testHelpers.fail('FeedBookmarkAPI 테스트 중 에러 발생', e);
+      failed++;
+    } finally {
+      testHelpers.sectionEnd('FeedBookmarkAPI 테스트', passed, failed);
     }
   };
 
   export const testFeedLikeAPI = async () => {
-    console.log('=== FeedLike API Test Start ===');
+    testHelpers.section('FeedLikeAPI 테스트');
+    let passed = 0;
+    let failed = 0;
+
+    try {
+      testHelpers.step(1, '테스트용 피드 생성');
+      const feed = await feedAPI.createFeed({
+        images: ['https://test.com/like-test.jpg'],
+        caption: 'like test feed',
+      });
+      if (testHelpers.expectNotNull(feed, '피드 생성')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-    // 1. 피드 생성
-    const feed = await feedAPI.createFeed({
-      images: ['https://test.com/like-test.jpg'],
-      caption: 'like test feed',
-    });
-    console.log('Created feed:', { id: feed.id, caption: feed.caption });
+      testHelpers.step(2, '좋아요 추가');
+      await feedLikeAPI.likeFeed(feed.id);
+      testHelpers.success('좋아요 추가 완료');
+      passed++;
   
-    // 2. 좋아요 추가
-    await feedLikeAPI.likeFeed(feed.id);
-    console.log('Like added');
+      testHelpers.step(3, '좋아요 여부 확인 (추가 후)');
+      const isLikedAfterLike = await feedLikeAPI.isLiked(feed.id);
+      if (testHelpers.expectBoolean(isLikedAfterLike, true, '좋아요 여부 (true)')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-    // 3. 좋아요 여부 확인
-    const isLikedAfterLike = await feedLikeAPI.isLiked(feed.id);
-    console.log('Is liked after like (expect true):', isLikedAfterLike);
+      testHelpers.step(4, '좋아요 취소');
+      await feedLikeAPI.unlikeFeed(feed.id);
+      testHelpers.success('좋아요 취소 완료');
+      passed++;
   
-    // 4. 좋아요 취소
-    await feedLikeAPI.unlikeFeed(feed.id);
-    console.log('Like removed');
+      testHelpers.step(5, '좋아요 여부 확인 (취소 후)');
+      const isLikedAfterUnlike = await feedLikeAPI.isLiked(feed.id);
+      if (testHelpers.expectBoolean(isLikedAfterUnlike, false, '좋아요 여부 (false)')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-    // 5. 다시 좋아요 여부 확인
-    const isLikedAfterUnlike = await feedLikeAPI.isLiked(feed.id);
-    console.log('Is liked after unlike (expect false):', isLikedAfterUnlike);
+      testHelpers.step(6, '좋아요 다시 추가');
+      await feedLikeAPI.likeFeed(feed.id);
+      testHelpers.success('좋아요 다시 추가 완료');
+      passed++;
   
-    // 6. 다시 좋아요 추가
-    await feedLikeAPI.likeFeed(feed.id);
-    console.log('Like added again');
+      testHelpers.step(7, '내가 좋아요한 피드 목록 조회');
+      const likedFeeds = await feedLikeAPI.getLikedFeeds({ limit: 10 });
+      const hasFeedId = likedFeeds.some((l) => l.feedId === feed.id);
+      if (testHelpers.expectBoolean(hasFeedId, true, '좋아요 목록에 피드 포함')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-    // 7. 내가 좋아요한 피드 목록 조회
-    const likedFeeds = await feedLikeAPI.getLikedFeeds({ limit: 10 });
-    console.log(
-      'My liked feeds (ids):',
-      likedFeeds.map((l) => l.feedId)
-    );
-  
-    await feedAPI.deleteFeed(feed.id);
-    console.log('feed cleanup success');
-    console.log('=== FeedLike API Test End ===');
+      testHelpers.step(8, '테스트 피드 정리');
+      await feedAPI.deleteFeed(feed.id);
+      testHelpers.success('피드 정리 완료');
+      passed++;
+    } catch (e) {
+      testHelpers.fail('FeedLikeAPI 테스트 중 에러 발생', e);
+      failed++;
+    } finally {
+      testHelpers.sectionEnd('FeedLikeAPI 테스트', passed, failed);
+    }
   };
 
   export const testFeedShareAPI = async () => {
+    testHelpers.section('FeedShareAPI 테스트');
+    let passed = 0;
+    let failed = 0;
+
     try {
-      console.log('--- FeedShareAPI 테스트 시작 ---');
-  
-      // 1️⃣ 테스트용 피드 생성
+      testHelpers.step(1, '테스트용 피드 생성');
       const createdFeed = await feedAPI.createFeed({
         images: ['https://test.com/test.jpg'],
         caption: '테스트용 피드',
       });
-      console.log('생성된 피드:', { id: createdFeed.id, caption: createdFeed.caption });
-  
+      if (testHelpers.expectNotNull(createdFeed, '피드 생성')) {
+        passed++;
+      } else {
+        failed++;
+      }
       const feedId = createdFeed.id;
   
-      // 2️⃣ 공유 추가
+      testHelpers.step(2, '공유 추가');
       const shared = await feedShareAPI.shareFeed(feedId);
-      console.log('공유 완료:', {
-        id: shared.id,
-        feedId: shared.feedId,
-        userId: shared.userId,
-      });
+      if (testHelpers.expect(shared.feedId, feedId, '공유 추가')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-      // 3️⃣ 내가 공유한 피드 목록 조회
+      testHelpers.step(3, '내가 공유한 피드 목록 조회');
       const sharedFeeds = await feedShareAPI.getSharedFeeds({ limit: 10 });
-      console.log(
-        '내 공유 피드 목록 (ids):',
-        sharedFeeds.map((s) => s.feedId)
-      );
+      const hasFeedId = sharedFeeds.some((s) => s.feedId === feedId);
+      if (testHelpers.expectBoolean(hasFeedId, true, '공유 목록에 피드 포함')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-      // 4️⃣ 여러 번 공유 테스트 (중복 허용)
+      testHelpers.step(4, '여러 번 공유 테스트 (중복 허용)');
       const sharedAgain = await feedShareAPI.shareFeed(feedId);
-      console.log('다시 공유:', sharedAgain);
+      if (testHelpers.expectNotNull(sharedAgain, '중복 공유 허용')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-      // 5️⃣ 공유 목록 조회 후 shared_count 확인
+      testHelpers.step(5, '공유 카운트 확인');
       const feedsAfterShare = await feedAPI.getFeed(feedId);
-      console.log('피드 sharedCount 확인:', feedsAfterShare?.sharedCount);
+      if (testHelpers.expectNotNull(feedsAfterShare?.sharedCount, 'sharedCount 존재')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
+      testHelpers.step(6, '테스트 피드 정리');
       await feedAPI.deleteFeed(feedId);
-      console.log('feed cleanup success');
-
-      console.log('--- FeedShareAPI 테스트 종료 ---');
+      testHelpers.success('피드 정리 완료');
+      passed++;
     } catch (err) {
-      console.error('테스트 에러:', err);
+      testHelpers.fail('FeedShareAPI 테스트 중 에러 발생', err);
+      failed++;
+    } finally {
+      testHelpers.sectionEnd('FeedShareAPI 테스트', passed, failed);
     }
   };
 
   export const testFeedCommentAPI = async () => {
+    testHelpers.section('FeedCommentAPI 테스트');
+    let passed = 0;
+    let failed = 0;
+
     try {
-      console.log('================ FeedCommentAPI 테스트 시작 ================');
-  
-      // 1️⃣ 테스트용 피드 생성
-      console.log('🔹 1️⃣ 테스트용 피드 생성 중...');
+      testHelpers.step(1, '테스트용 피드 생성');
       const createdFeed = await feedAPI.createFeed({
         images: ['https://test.com/test.jpg'],
         caption: '테스트용 피드 댓글',
       });
-      console.log('✅ 생성된 피드:', { id: createdFeed.id, caption: createdFeed.caption });
+      if (testHelpers.expectNotNull(createdFeed, '피드 생성')) {
+        passed++;
+      } else {
+        failed++;
+      }
       const feedId = createdFeed.id;
   
-      // 2️⃣ 댓글 작성
-      console.log('🔹 2️⃣ 댓글 작성 중...');
+      testHelpers.step(2, '댓글 작성');
       const comment = await feedCommentAPI.createComment({
         feedId,
         content: '첫 댓글입니다!',
       });
-      console.log('✅ 작성된 댓글:', {
-        id: comment.id,
-        feedId: comment.feedId,
-        content: comment.content,
-      });
+      if (testHelpers.expect(comment.content, '첫 댓글입니다!', '댓글 작성')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-      // 3️⃣ 대댓글 작성
-      console.log('🔹 3️⃣ 대댓글 작성 중...');
+      testHelpers.step(3, '대댓글 작성');
       const reply = await feedCommentAPI.createComment({
         feedId,
         parentCommentId: comment.id,
         content: '대댓글입니다!',
       });
-      console.log('✅ 작성된 대댓글:', {
-        id: reply.id,
-        parentCommentId: reply.parentCommentId,
-        content: reply.content,
-      });
+      if (testHelpers.expect(reply.parentCommentId, comment.id, '대댓글 작성')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-      // 4️⃣ 댓글 수정
-      console.log('🔹 4️⃣ 댓글 수정 중...');
+      testHelpers.step(4, '댓글 수정');
       const updatedComment = await feedCommentAPI.updateComment(
         comment.id,
         '수정된 댓글입니다.'
       );
-      console.log('✅ 수정된 댓글:', {
-        id: updatedComment.id,
-        content: updatedComment.content,
-      });
+      if (testHelpers.expect(updatedComment.content, '수정된 댓글입니다.', '댓글 수정')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-      // 5️⃣ 댓글 목록 조회
-      console.log('🔹 5️⃣ 댓글 목록 조회 중...');
+      testHelpers.step(5, '댓글 목록 조회');
       const comments = await feedCommentAPI.getComments(feedId);
-      console.log(
-        '✅ 댓글 목록 (대댓글 포함) 요약:',
-        comments.map((c) => ({
-          id: c.id,
-          parentCommentId: c.parentCommentId,
-          content: c.content,
-          replyCount: c.replies?.length ?? 0,
-        }))
-      );
+      const hasComment = comments.some((c) => c.id === comment.id);
+      if (testHelpers.expectBoolean(hasComment, true, '댓글 목록에 포함')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-      // 6️⃣ 특정 댓글 조회
-      console.log('🔹 6️⃣ 특정 댓글 조회 중...');
+      testHelpers.step(6, '특정 댓글 조회');
       const singleComment = await feedCommentAPI.getComment(comment.id);
-      console.log('✅ 특정 댓글 조회 결과:', {
-        id: singleComment?.id,
-        content: singleComment?.content,
-      });
+      if (testHelpers.expect(singleComment?.id, comment.id, '특정 댓글 조회')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-      // 7️⃣ 댓글 삭제
-      console.log('🔹 7️⃣ 댓글 삭제 중...');
+      testHelpers.step(7, '댓글 삭제');
       await feedCommentAPI.deleteComment(comment.id);
-      console.log('✅ 댓글 삭제 완료');
+      testHelpers.success('댓글 삭제 완료');
+      passed++;
   
+      testHelpers.step(8, '댓글 목록 조회 (삭제 후)');
       const commentsAfterDelete = await feedCommentAPI.getComments(feedId);
-      console.log(
-        '✅ 댓글 목록 삭제 후 (expect 0 or only replies cleaned):',
-        commentsAfterDelete
-      );
+      const hasDeletedComment = commentsAfterDelete.some((c) => c.id === comment.id);
+      if (testHelpers.expectBoolean(hasDeletedComment, false, '삭제된 댓글 미포함')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
+      testHelpers.step(9, '테스트 피드 정리');
       await feedAPI.deleteFeed(feedId);
-      console.log('feed cleanup success');
-
-      console.log('================ FeedCommentAPI 테스트 종료 ================'); 
+      testHelpers.success('피드 정리 완료');
+      passed++;
     } catch (err) {
-      console.error('❌ 테스트 에러 발생:', err);
+      testHelpers.fail('FeedCommentAPI 테스트 중 에러 발생', err);
+      failed++;
+    } finally {
+      testHelpers.sectionEnd('FeedCommentAPI 테스트', passed, failed);
     }
   };
 
   export const testFollowAPI = async () => {
     const targetUserId = 'f81ca95d-4cac-48cd-9d3b-9e5848c7198b';
+    testHelpers.section('FollowAPI 테스트');
+    let passed = 0;
+    let failed = 0;
   
     try {
-      console.log('--- FollowAPI 테스트 시작 ---');
-  
-      // 1️⃣ 팔로우 시도
+      testHelpers.step(1, '팔로우 시도');
       try {
         await followAPI.follow(targetUserId);
-        console.log(`[팔로우] ${targetUserId} 팔로우 성공`);
+        testHelpers.success(`팔로우 성공: ${targetUserId}`);
+        passed++;
       } catch (err: any) {
-        console.warn(`[팔로우] 에러 발생: ${err.message}`);
+        testHelpers.fail(`팔로우 실패: ${err.message}`, err);
+        failed++;
       }
   
-      // 2️⃣ 팔로우 여부 확인
+      testHelpers.step(2, '팔로우 여부 확인');
       const isFollowing = await followAPI.isFollowing(targetUserId);
-      console.log(`[팔로우 여부] ${targetUserId} 팔로우 중?`, isFollowing);
+      if (testHelpers.expectBoolean(isFollowing, true, '팔로우 여부 (true)')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-      // 3️⃣ 여러 유저 팔로우 여부 확인 (단일 테스트)
+      testHelpers.step(3, '여러 유저 팔로우 여부 확인');
       const areFollowing = await followAPI.areFollowing([targetUserId]);
-      console.log('[여러 유저 팔로우 여부]', areFollowing);
+      if (testHelpers.expectBoolean(areFollowing[targetUserId] || false, true, '팔로우 여부 확인')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-      // 4️⃣ 팔로워 목록 조회
+      testHelpers.step(4, '팔로워 목록 조회');
       const followers = await followAPI.getFollowers({ limit: 5 });
-      console.log(
-        '[팔로워 목록 요약]',
-        followers.map((f) => ({
-          followerId: f.followerId,
-          followerNickname: f.followerProfile.nickname,
-        }))
-      );
+      if (testHelpers.expectNotNull(followers, '팔로워 목록 조회')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-      // 5️⃣ 팔로잉 목록 조회
+      testHelpers.step(5, '팔로잉 목록 조회');
       const followings = await followAPI.getFollowings({ limit: 5 });
-      console.log(
-        '[팔로잉 목록 요약]',
-        followings.map((f) => ({
-          followingId: f.followingId,
-          followingNickname: f.followingProfile.nickname,
-        }))
-      );
+      if (testHelpers.expectNotNull(followings, '팔로잉 목록 조회')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-      // 6️⃣ 팔로워/팔로잉 수 조회
+      testHelpers.step(6, '팔로워/팔로잉 수 조회');
       const counts = await followAPI.getFollowCounts(targetUserId);
-      console.log('[팔로워/팔로잉 수]', {
-        followerCount: counts.followerCount,
-        followingCount: counts.followingCount,
-      });
+      if (testHelpers.expectNotNull(counts.followerCount, '팔로워 수') &&
+          testHelpers.expectNotNull(counts.followingCount, '팔로잉 수')) {
+        passed += 2;
+      } else {
+        failed += 2;
+      }
   
-      // 7️⃣ 언팔로우 시도
+      testHelpers.step(7, '언팔로우 시도');
       try {
         await followAPI.unfollow(targetUserId);
-        console.log(`[언팔로우] ${targetUserId} 언팔로우 성공`);
+        testHelpers.success(`언팔로우 성공: ${targetUserId}`);
+        passed++;
       } catch (err: any) {
-        console.warn(`[언팔로우] 에러 발생: ${err.message}`);
+        testHelpers.fail(`언팔로우 실패: ${err.message}`, err);
+        failed++;
       }
   
-      // 8️⃣ 언팔로우 후 팔로우 여부 확인
+      testHelpers.step(8, '언팔로우 후 팔로우 여부 확인');
       const isFollowingAfterUnfollow = await followAPI.isFollowing(targetUserId);
-      console.log(`[언팔 후 팔로우 여부] ${targetUserId} 팔로우 중?`, isFollowingAfterUnfollow);
-  
-      console.log('--- FollowAPI 테스트 종료 ---');
+      if (testHelpers.expectBoolean(isFollowingAfterUnfollow, false, '팔로우 여부 (false)')) {
+        passed++;
+      } else {
+        failed++;
+      }
     } catch (err) {
-      console.error('[FollowAPI 테스트 에러]', err);
+      testHelpers.fail('FollowAPI 테스트 중 에러 발생', err);
+      failed++;
+    } finally {
+      testHelpers.sectionEnd('FollowAPI 테스트', passed, failed);
     }
   };
   
   export const testUserProfileAPI = async () => {
     const targetUserId = 'f81ca95d-4cac-48cd-9d3b-9e5848c7198b';
+    testHelpers.section('UserProfileAPI 테스트');
+    let passed = 0;
+    let failed = 0;
   
     try {
-      console.log('--- [UserProfileAPI] 테스트 시작 ---');
-  
-      // 1️⃣ 단일 유저 프로필 조회
+      testHelpers.step(1, '단일 유저 프로필 조회');
       const profile = await userProfileAPI.getUserProfile(targetUserId);
-      console.log(`[UserProfileAPI] 단일 조회 - ${targetUserId}:`, profile && {
-        userId: profile.userId,
-        nickname: profile.nickname,
-        followerCount: profile.followerCount,
-        followingCount: profile.followingCount,
-        postCount: profile.postCount,
-      });
+      if (testHelpers.expect(profile?.userId, targetUserId, '프로필 조회')) {
+        passed++;
+      } else {
+        failed++;
+      }
   
-      // 2️⃣ 여러 유저 프로필 조회
+      testHelpers.step(2, '여러 유저 프로필 조회');
       const profiles = await userProfileAPI.getUserProfiles([targetUserId]);
-      console.log(
-        `[UserProfileAPI] 여러 유저 조회 - [${targetUserId}]:`,
-        profiles.map((p) => ({
-          userId: p.userId,
-          nickname: p.nickname,
-        }))
-      );
-  
-      console.log('--- [UserProfileAPI] 테스트 종료 ---');
+      const hasTargetUser = profiles.some((p) => p.userId === targetUserId);
+      if (testHelpers.expectBoolean(hasTargetUser, true, '프로필 목록에 포함')) {
+        passed++;
+      } else {
+        failed++;
+      }
     } catch (err) {
-      console.error('[UserProfileAPI] 테스트 에러:', err);
+      testHelpers.fail('UserProfileAPI 테스트 중 에러 발생', err);
+      failed++;
+    } finally {
+      testHelpers.sectionEnd('UserProfileAPI 테스트', passed, failed);
     }
   };
   
