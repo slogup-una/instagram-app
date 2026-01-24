@@ -40,6 +40,44 @@ export interface UpdateProfileParams {
   profileImageUrl?: string | null;
 }
 
+/**
+ * 프로필이 없으면 자동 생성하는 헬퍼 함수
+ * @param userId - 유저 ID
+ */
+const ensureUserProfile = async (userId: string): Promise<void> => {
+  // 프로필 존재 여부 확인
+  const { data: existingProfile, error: checkError } = await supabase
+    .from('user_profiles')
+    .select('user_id')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (checkError && checkError.code !== 'PGRST116') {
+    throw new Error(`프로필 확인 실패: ${checkError.message}`);
+  }
+
+  // 프로필이 이미 있으면 종료
+  if (existingProfile) return;
+
+  // 프로필이 없으면 생성
+  const nickname = generateRandomNickname();
+  const profileImageUrl = generateRandomProfileImage();
+
+  const { error: profileError } = await supabase
+    .from('user_profiles')
+    .insert([
+      {
+        user_id: userId,
+        nickname: nickname,
+        profile_image_url: profileImageUrl,
+      },
+    ]);
+
+  if (profileError) {
+    throw new Error(`프로필 생성 실패: ${profileError.message}`);
+  }
+};
+
 export const authAPI = {
 
   // 회원가입시 랜덤프로필 자동생성
@@ -52,30 +90,13 @@ export const authAPI = {
     if (error) throw error;
     if (!data.user) throw new Error('No user created');
   
-    // nickname이 제공되지 않으면 랜덤 생성
-    const nickname = generateRandomNickname();
-    const profileImageUrl = generateRandomProfileImage();
-  
-    const { error: profileError } = await supabase
-      .from('user_profiles')
-      .insert([
-        {
-          user_id: data.user.id,
-          nickname: nickname,
-          profile_image_url: profileImageUrl,
-        },
-      ]);
-  
-    if (profileError) {
-      // ⚠️ 사이드프로젝트에서는 여기까지 rollback 안 해도 됨
-      // 진짜 서비스면 auth user 삭제 고려
-      throw new Error(`프로필 생성 실패: ${profileError.message}`);
-    }
+    // 프로필 자동 생성
+    await ensureUserProfile(data.user.id);
   
     return data;
   },
 
-  // 로그인
+  // 로그인 (프로필 없으면 자동 생성)
   signIn: async ({ email, password }: SignInParams) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -83,6 +104,11 @@ export const authAPI = {
     });
 
     if (error) throw error;
+    if (!data.user) throw new Error('No user found');
+
+    // 프로필이 없으면 자동 생성
+    await ensureUserProfile(data.user.id);
+
     return data;
   },
 
